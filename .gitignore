@@ -1,6 +1,14 @@
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 
-activityNet_resize/*
-captions/*
+MVAD/*
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history
+
+lib/Untitled*.ipynb
 
