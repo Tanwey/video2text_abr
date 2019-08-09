@@ -19,11 +19,19 @@ class PositionalEncoder(nn.Module):
 
         self.pe[:, ::2] = torch.sin(self.pe[:, ::2])
         self.pe[:, 1::2] = torch.cos(self.pe[:, 1::2])
-        self.pe = self.pe.unsqueeze(0)
+        self.pe = self.pe.unsqueeze(1)
+        assert self.pe.size(0) == max_seq_length
+        assert self.pe.size(2) == d_model
 
     def forward(self, x):
+        '''
+            Args:
+              x: Tensor (seq, batch, d_model)
+            Returns:
+              x: Tensor (seq, batch, d_model) with positional encoding
+        '''
         p, batch, d = x.size()
-        x += self.pe[:p, batch, 0:d] + x
+        x = self.pe[:p] + x
         return x
 
     def get_angle(self, position, d_model):
@@ -202,15 +210,44 @@ class Transformer(nn.Module):
         self.emb2voc = nn.Linear(d_model, tar_vocab_size)
 
     def forward(self, inp, tar, inp_key_padding_mask=None, tar_key_padding_mask=None, mem_key_padding_mask=None, inp_attn_mask=None, tar_attn_mask=None, mem_attn_mask=None):
+        '''
+            Args:
+              inp: (seq, batch, d_model)
+              tar: (batch, seq)
+              inp_key_padding_mask: Key padding mask for encoder multiheadattention. Tensor (batch, seq) condist of 0, 1 (1 for pad).
+              tar_key_padding_mask: Key padding mask for decoder first multiheadattention. Tensor (batch, seq) condist of 0, 1 (1 for pad).
+              mem_key_padding_mask: Key padding mask for encoder second multiheadattention. Tensor (batch, seq) condist of 0, 1 (1 for pad).
+              inp_attn_mask: Mask directly apply to encoder multiheadattention. Tensor (inp_seq, inp_seq) consist of 0, -1e9
+              tar_attn_mask: Mask directly apply to decoder first multiheadattention. Tensor (tar_seq, tar_seq) consist of 0, -1e9
+              mem_attn_mask: Mask directly apply to decoder second multiheadattention. Tensor (tar_seq, inp_seq) consist of 0, -1e9
+            Returns:
+              x: Tensor (seq, batch, vocab_size)
+        '''
+        inp_s, inp_b, inp_d = inp.size()
         inp = self.pe(inp)
+        
         mem = self.encoder(
             inp, key_padding_mask=inp_key_padding_mask, attn_mask=inp_attn_mask)
+        mem_s, mem_b, mem_d = mem.size()
+        assert mem_s == inp_s
+        assert mem_b == inp_b
+        assert mem_d == self.d_model
 
+        tar_b, tar_s = tar.size()
         tar = self.word_embedding(tar)
+        assert tar.size(0) == tar_b
+        assert tar.size(1) == tar_s
+        
+        tar = tar.transpose(0, 1)
+        
         tar = self.pe(tar)
         x = self.decoder(tar, mem, tar_key_padding_mask=tar_key_padding_mask,
                          mem_key_padding_mask=mem_key_padding_mask, tar_attn_mask=tar_attn_mask, mem_attn_mask=mem_attn_mask)
         x = self.emb2voc(x)
+        x = x.transpose(0, 1)
+        assert x.size(0) == inp_b
+        assert x.size(1) == inp_s
+        assert x.size(2) == self.tar_vocab_size
 
         return x
 
