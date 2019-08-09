@@ -1,5 +1,0 @@
-{
-  "python.pythonPath": "/home/anaconda3/envs/robin/bin/python",
-  "python.dataScience.exportWithOutputEnabled": true,
-  "python.dataScience.jupyterServerURI": "http://155.230.27.137:20001/?token=5445728ecd84feb158b2df49874afd8f38204acd9af7853c"
-}
