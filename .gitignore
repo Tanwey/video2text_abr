@@ -4,6 +4,7 @@
 MVAD/*
 
 .vscode/*
+*/.vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
@@ -12,3 +13,4 @@ MVAD/*
 
 lib/Untitled*.ipynb
 
+lib/__pycache__/*
