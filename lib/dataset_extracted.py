@@ -1,5 +1,5 @@
 import torch
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
 import numpy as np
 import os
 import glob
@@ -29,8 +29,8 @@ class ExtractedFeatureDataset(Dataset):
               caption:
               video_file:
               inp_key_padding_mask:
-              mem_key_padding_mask:
               tar_key_padding_mask:
+              mem_key_padding_mask:
         '''
         self.feature_path = feature_path
         self.corpus_path = corpus_path
@@ -54,7 +54,7 @@ class ExtractedFeatureDataset(Dataset):
 
         inp_key_padding_mask = create_padding_mask_from_size(
             self.inp_max_sequence_size, feature.shape[0])
-        tar_key_padding_mask = inp_key_padding_mask
+        mem_key_padding_mask = inp_key_padding_mask
 
         caption = torch.IntTensor(caption)
 
@@ -62,8 +62,8 @@ class ExtractedFeatureDataset(Dataset):
             feature = self.feature_transform(feature)
 
         if self.caption_transform is not None:
-            caption = self.caption_transform(caption)
+            caption = self.caption_transform(caption).type(torch.int64)
 
-        mem_key_padding_mask = create_padding_mask_from_data(caption)
+        tar_key_padding_mask = create_padding_mask_from_data(caption[:-1])
 
-        return feature, caption, video_file, inp_key_padding_mask, mem_key_padding_mask, tar_key_padding_mask
+        return feature, caption, video_file, inp_key_padding_mask, tar_key_padding_mask, mem_key_padding_mask

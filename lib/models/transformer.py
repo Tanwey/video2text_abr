@@ -221,11 +221,11 @@ class Transformer(nn.Module):
               tar_attn_mask: Mask directly apply to decoder first multiheadattention. Tensor (tar_seq, tar_seq) consist of 0, -1e9
               mem_attn_mask: Mask directly apply to decoder second multiheadattention. Tensor (tar_seq, inp_seq) consist of 0, -1e9
             Returns:
-              x: Tensor (seq, batch, vocab_size)
+              x: Tensor (batch, seq, vocab_size)
         '''
         inp_s, inp_b, inp_d = inp.size()
         inp = self.pe(inp)
-        
+
         mem = self.encoder(
             inp, key_padding_mask=inp_key_padding_mask, attn_mask=inp_attn_mask)
         mem_s, mem_b, mem_d = mem.size()
@@ -237,16 +237,16 @@ class Transformer(nn.Module):
         tar = self.word_embedding(tar)
         assert tar.size(0) == tar_b
         assert tar.size(1) == tar_s
-        
+
         tar = tar.transpose(0, 1)
-        
+
         tar = self.pe(tar)
         x = self.decoder(tar, mem, tar_key_padding_mask=tar_key_padding_mask,
                          mem_key_padding_mask=mem_key_padding_mask, tar_attn_mask=tar_attn_mask, mem_attn_mask=mem_attn_mask)
         x = self.emb2voc(x)
         x = x.transpose(0, 1)
-        assert x.size(0) == inp_b
-        assert x.size(1) == inp_s
+        assert x.size(0) == tar_b
+        assert x.size(1) == tar_s
         assert x.size(2) == self.tar_vocab_size
 
         return x
@@ -266,7 +266,7 @@ def create_padding_mask_from_size(size, real_size):
           mask: Mask Tensor (seq)
     assert size > real_size
     '''
-    mask = torch.ones((size))
+    mask = torch.ones((size)).type(torch.uint8)
     mask[:real_size] = 0
     return mask
 
