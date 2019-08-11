@@ -132,13 +132,18 @@ def main():
                 print('Epoch {} Batch {}  {:.1f}s - train_loss: {:6f} train_accuracy: {:4f}%'.format(epoch, batch,
                                                                                                      current_time - start_time, train_loss / batch, train_accuracy / batch))
                 
+        # Tensorboard Graph
+        if epoch == 1:
+            with torch.no_grad():
+                writer.add_graph(partial(model, feature, caption_inp, inp_key_padding_mask, tar_key_padding_mask, mem_key_padding_mask, tar_attn_mask=tar_attn_mask))
+                
         # Checkpoints
         torch.save({
             'epoch': epoch,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': train_loss / batch,
-        }, os.path.join(checkpoint, epoch))
+        }, os.path.join(checkpoint, str(epoch)))
         
         # Logs
         writer.add_scalar('loss/train', train_loss / batch, epoch)
