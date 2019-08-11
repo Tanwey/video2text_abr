@@ -5,6 +5,7 @@ import torch.optim as optim
 from torch.optim import lr_scheduler
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
 from dataset_extracted import ExtractedFeatureDataset
 
@@ -32,13 +33,14 @@ cuda_device = 'cuda:1'
 feature_path = '../MVAD/I3D_rgb/train'
 corpus_file = '../MVAD/corpus_M-VAD_train.txt'
 tokenizer_file = 'tokenizer.model'
-checkpoint = os.path.join(
-    '../checkpoint', datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+start_datetime = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+checkpoint = os.path.join('../checkpoint', start_datetime)
+tensorboard_dir = os.path.join('../logs', start_datetime)
 BATCH = 16
 EPOCH = 30
 beta1 = 0.9
 beta2 = 0.98
-lr = 0.000316
+lr = 0.0001
 warmup_step = 4000
 
 
@@ -91,21 +93,20 @@ def main():
     # Loss
     criterion = nn.CrossEntropyLoss(ignore_index=0)
 
-    # Check point
-    # torch.utils.ch
-
+    # Tensorboard
+    writer = SummaryWriter(tensorboard_dir)
+    
+    
     start_time = time.time()
-    for epoch in range(EPOCH):
+    for epoch in range(1, EPOCH + 1):
         train_loss = 0
         train_accuracy = 0
-        for batch, sample in enumerate(train_loader):
+        for batch, sample in enumerate(train_loader, start=1):
             # Load
             feature = sample[0].to(device)
             # (inp_max_seq_length, batch, d_model)
             feature = feature.transpose(0, 1)
-            assert BATCH == feature.size(1)
             caption = sample[1]  # (batch, tar_max_seq_length)
-            assert BATCH == caption.size(0)
             inp_key_padding_mask = sample[3].to(device)
             tar_key_padding_mask = sample[4].to(device)
             mem_key_padding_mask = sample[5].to(device)
@@ -117,30 +118,35 @@ def main():
             prediction = model(feature, caption_inp, inp_key_padding_mask,
                                tar_key_padding_mask, mem_key_padding_mask, tar_attn_mask=tar_attn_mask)
 
-            assert BATCH == prediction.size(0)
             loss = criterion(prediction.transpose(1, 2), caption_tar)
             train_accuracy += accuracy_metrics(prediction, caption_tar)
 
             optimizer.zero_grad()
             loss.backward()
-            optimizer.step_and_update_lr()
+            optimizer.step()
 
             train_loss += loss.item()
 
-            if (batch + 1) % 100 == 0:
+            if batch % 100 == 0:
                 current_time = time.time()
-                print('Epoch {} Batch {}  {:.1f}s - train_loss: {:6f} train_accuracy: {:4f}%'.format(epoch + 1, batch + 1,
-                                                                                                     current_time - start_time, train_loss / (batch + 1), train_accuracy / batch))
-
+                print('Epoch {} Batch {}  {:.1f}s - train_loss: {:6f} train_accuracy: {:4f}%'.format(epoch, batch,
+                                                                                                     current_time - start_time, train_loss / batch, train_accuracy / batch))
+                
+        # Checkpoints
         torch.save({
-            'epoch': epoch + 1,
+            'epoch': epoch,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': train_loss / batch,
-        }, checkpoint)
+        }, os.path.join(checkpoint, epoch))
+        
+        # Logs
+        writer.add_scalar('loss/train', train_loss / batch, epoch)
+        writer.add_scalar('accuracy/train', train_accuracy / batch, epoch)
+                          
         current_time = time.time()
-        print('Epoch {}  {:.1f}s - train_loss: {:6f} train_accuracy: {:4f}%'.format(epoch + 1,
-                                                                                    current_time - start_time, train_loss / (batch + 1), train_accuracy / batch))
+        print('Epoch {}  {:.1f}s - train_loss: {:6f} train_accuracy: {:4f}%'.format(epoch,
+                                                                                    current_time - start_time, train_loss / batch, train_accuracy / batch))
 
 
 if __name__ == '__main__':

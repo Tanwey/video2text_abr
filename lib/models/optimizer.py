@@ -12,7 +12,7 @@ class ScheduledOptim():
         self.n_current_steps = 0
         self.init_lr = np.power(d_model, -0.5)
 
-    def step_and_update_lr(self):
+    def step(self):
         "Step with the inner optimizer"
         self._update_learning_rate()
         self._optimizer.step()
@@ -34,3 +34,16 @@ class ScheduledOptim():
 
         for param_group in self._optimizer.param_groups:
             param_group['lr'] = lr
+            
+    def state_dict(self):
+        state = self._optimizer.state_dict()
+        state['init_lr'] = self.init_lr
+        state['n_warmup_steps'] = self.n_warmup_steps
+        state['n_current_steps'] = self.n_current_steps
+        return state
+
+    def load_state_dict(self, state):
+        self._optimizer.load_state_dict(state)
+        self.init_lr = state['init_lr']
+        self.n_warmup_steps = state['n_warmup_steps']
+        self.n_current_steps = state['n_current_steps']
