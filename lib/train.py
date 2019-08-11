@@ -35,6 +35,7 @@ corpus_file = '../MVAD/corpus_M-VAD_train.txt'
 tokenizer_file = 'tokenizer.model'
 start_datetime = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 checkpoint = os.path.join('../checkpoint', start_datetime)
+os.mkdir(checkpoint)
 tensorboard_dir = os.path.join('../logs', start_datetime)
 BATCH = 16
 EPOCH = 30
@@ -135,7 +136,7 @@ def main():
         # Tensorboard Graph
         if epoch == 1:
             with torch.no_grad():
-                writer.add_graph(partial(model, feature, caption_inp, inp_key_padding_mask, tar_key_padding_mask, mem_key_padding_mask, tar_attn_mask=tar_attn_mask))
+                writer.add_graph(model, (feature, caption_inp))
                 
         # Checkpoints
         torch.save({
