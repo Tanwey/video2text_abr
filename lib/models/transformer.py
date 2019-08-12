@@ -159,7 +159,7 @@ class TransformerEncoder(nn.Module):
 
         for encoder_layer in self.encoder_layers:
             x = encoder_layer(
-                inp, key_padding_mask=key_padding_mask, attn_mask=attn_mask)
+                x, key_padding_mask=key_padding_mask, attn_mask=attn_mask)
 
         return x
 
@@ -191,22 +191,23 @@ class TransformerDecoder(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self, tar_vocab_size, d_model, num_heads, num_layers, dff, dropout=0.1, max_seq_length=512):
+    def __init__(self, tar_vocab_size, d_model, num_heads, encoder_num_layers, decoder_num_layers, dff, dropout=0.1, max_seq_length=512):
         super(Transformer, self).__init__()
         self.tar_vocab_size = tar_vocab_size
         self.d_model = d_model
         self.num_heads = num_heads
-        self.num_layers = num_layers
+        self.encoder_num_layers = encoder_num_layers
+        self.decoder_num_layers = decoder_num_layers
         self.dff = dff
         self.dropout = dropout
         self.max_seq_length = max_seq_length
 
         self.pe = PositionalEncoder(max_seq_length, d_model)
         self.encoder = TransformerEncoder(
-            d_model, num_heads, num_layers, dff, dropout)
+            d_model, num_heads, encoder_num_layers, dff, dropout)
         self.word_embedding = nn.Embedding(tar_vocab_size, d_model)
         self.decoder = TransformerDecoder(
-            d_model, num_heads, num_layers, dff, dropout)
+            d_model, num_heads, decoder_num_layers, dff, dropout)
         self.emb2voc = nn.Linear(d_model, tar_vocab_size)
 
     def forward(self, inp, tar, inp_key_padding_mask=None, tar_key_padding_mask=None, mem_key_padding_mask=None, inp_attn_mask=None, tar_attn_mask=None, mem_attn_mask=None):

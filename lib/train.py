@@ -23,7 +23,8 @@ import datetime
 tar_vocab_size = 5000
 d_model = 1024
 num_heads = 8
-num_layers = 6
+encoder_num_layers = 2
+decoder_num_layers = 6
 dff = 2048
 dropout = 0.1
 max_seq_length = 512  # For positional encoding
@@ -38,7 +39,7 @@ checkpoint = os.path.join('../checkpoint', start_datetime)
 os.mkdir(checkpoint)
 tensorboard_dir = os.path.join('../logs', start_datetime)
 BATCH = 16
-EPOCH = 30
+EPOCH = 25
 beta1 = 0.9
 beta2 = 0.98
 lr = 0.0001
@@ -63,7 +64,7 @@ def main():
 
     # Model
     model = Transformer(tar_vocab_size, d_model, num_heads,
-                        num_layers, dff, dropout, max_seq_length)
+                        encoder_num_layers, decoder_num_layers, dff, dropout, max_seq_length)
     model.to(device)
     model.train()
 
@@ -88,8 +89,8 @@ def main():
         train_dataset, batch_size=BATCH, shuffle=True, num_workers=2)
 
     # Optimizer
-    optimizer = ScheduledOptim(optim.Adam(model.parameters(), lr=lr, betas=(
-        beta1, beta2), eps=1e-9), d_model, warmup_step)
+    #optimizer = ScheduledOptim(optim.Adam(model.parameters(), lr=lr, betas=(beta1, beta2), eps=1e-9), d_model, warmup_step)
+    optimizer = optim.Adam(model.parameters(), lr=lr, betas=(beta1, beta2), eps=1e-9)
 
     # Loss
     criterion = nn.CrossEntropyLoss(ignore_index=0)
