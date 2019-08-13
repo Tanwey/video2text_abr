@@ -34,7 +34,7 @@ class Captioner:
 
     def caption_video_from_dataloader(self, dataloader, count=10):
         dataiter = iter(dataloader)
-        for i in range(10):
+        for i in range(count):
             sample = dataiter.next()
             feature = sample[0].transpose(0, 1)
             caption = sample[1]

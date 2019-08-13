@@ -24,26 +24,35 @@ tar_vocab_size = 5000
 d_model = 1024
 num_heads = 8
 encoder_num_layers = 2
-decoder_num_layers = 6
+decoder_num_layers = 4
 dff = 2048
 dropout = 0.1
-max_seq_length = 512  # For positional encoding
-inp_max_seq_length = 256
-tar_max_seq_length = 360
+max_seq_length = 80  # For positional encoding
+inp_max_seq_length = 50
+tar_max_seq_length = 50
 cuda_device = 'cuda:1'
-feature_path = '../MVAD/I3D_rgb/train'
+
+#feature_path = '../MVAD/I3D_rgb_kinetics/train'
+feature_path = None
+#feature_files = None
+train_feature_path = '../MVAD/I3D_rgb_kinetics/train'
+with open('../MVAD/train_fine') as f:
+    files = f.readlines()
+    feature_files = list(map(lambda file: os.path.join(train_feature_path, str.strip(file) + '.npy'), files))
+    feature_files.append(list(map(lambda file: os.path.join(train_feature_path + '_fliped', str.strip(file) + '.npy'), files)))
+                        
 corpus_file = '../MVAD/corpus_M-VAD_train.txt'
 tokenizer_file = 'tokenizer.model'
 start_datetime = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 checkpoint = os.path.join('../checkpoint', start_datetime)
 os.mkdir(checkpoint)
 tensorboard_dir = os.path.join('../logs', start_datetime)
-BATCH = 16
-EPOCH = 25
+BATCH = 64
+EPOCH = 40
 beta1 = 0.9
 beta2 = 0.98
 lr = 0.0001
-warmup_step = 4000
+#warmup_step = 4000
 
 
 def accuracy_metrics(predict, target):
@@ -52,10 +61,6 @@ def accuracy_metrics(predict, target):
     matched_matrix = matched_matrix * mask
     acc = matched_matrix.type(torch.float).sum() / mask.type(torch.float).sum()
     return acc * 100.0
-
-
-def train_step(sample, model):
-    pass
 
 
 def main():
@@ -82,7 +87,7 @@ def main():
 
     # Dataset
     train_dataset = ExtractedFeatureDataset(
-        feature_path, corpus_file, inp_max_seq_length, tar_max_seq_length, sp, feature_transform, caption_transform)
+        feature_path, corpus_file, inp_max_seq_length, tar_max_seq_length, sp, feature_transform, caption_transform, feature_files)
 
     # Dataloader
     train_loader = DataLoader(
@@ -90,15 +95,15 @@ def main():
 
     # Optimizer
     #optimizer = ScheduledOptim(optim.Adam(model.parameters(), lr=lr, betas=(beta1, beta2), eps=1e-9), d_model, warmup_step)
-    optimizer = optim.Adam(model.parameters(), lr=lr, betas=(beta1, beta2), eps=1e-9)
+    optimizer = optim.Adam(model.parameters(), lr=lr,
+                           betas=(beta1, beta2), eps=1e-9)
 
     # Loss
     criterion = nn.CrossEntropyLoss(ignore_index=0)
 
     # Tensorboard
     writer = SummaryWriter(tensorboard_dir)
-    
-    
+
     start_time = time.time()
     for epoch in range(1, EPOCH + 1):
         train_loss = 0
@@ -133,12 +138,12 @@ def main():
                 current_time = time.time()
                 print('Epoch {} Batch {}  {:.1f}s - train_loss: {:6f} train_accuracy: {:4f}%'.format(epoch, batch,
                                                                                                      current_time - start_time, train_loss / batch, train_accuracy / batch))
-                
+
         # Tensorboard Graph
         if epoch == 1:
             with torch.no_grad():
                 writer.add_graph(model, (feature, caption_inp))
-                
+
         # Checkpoints
         torch.save({
             'epoch': epoch,
@@ -146,11 +151,11 @@ def main():
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': train_loss / batch,
         }, os.path.join(checkpoint, str(epoch)))
-        
+
         # Logs
         writer.add_scalar('loss/train', train_loss / batch, epoch)
         writer.add_scalar('accuracy/train', train_accuracy / batch, epoch)
-                          
+
         current_time = time.time()
         print('Epoch {}  {:.1f}s - train_loss: {:6f} train_accuracy: {:4f}%'.format(epoch,
                                                                                     current_time - start_time, train_loss / batch, train_accuracy / batch))

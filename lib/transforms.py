@@ -43,6 +43,30 @@ class VideoResize:
         video = np.concatenate(clips)
         return {'video': video, 'caption': caption, 'video_file': video_file}
 
+class VideoResizePreserve:
+    def __init__(self, min_size=256):
+        '''
+            input:
+              min_size: int
+        '''
+        self.min_size = min_size
+
+    def __call__(self, sample):
+        '''
+            input:
+              sample: Dict['video', 'caption'] - video (Time, Height, Width, Channel)
+            return:
+              sample: Dict['video', 'caption'] - video (Time, output_H, output_W, Channel)
+        '''
+        video, caption, video_file = sample['video'], sample['caption'], sample['video_file']
+        h = video.shape[1]
+        w = video.shape[2]
+        ratio = self.min_size / min(h, w)
+        clips = [np.expand_dims(cv2.resize(
+            clip, dsize=(0, 0), fx=ratio, fy=ratio, interpolation=cv2.INTER_AREA), axis=0) for clip in video]
+        video = np.concatenate(clips)
+        return {'video': video, 'caption': caption, 'video_file': video_file}
+
 
 class VideoToTensor:
     def __init__(self):
@@ -64,7 +88,7 @@ class VideoRandomHorizontalFlip:
     def __init__(self):
         pass
 
-    def call(self, sample):
+    def __call__(self, sample):
         '''
             input:
               sample: Dict['video', 'caption'] - video (Time, Height, Width, Channel)
@@ -72,12 +96,24 @@ class VideoRandomHorizontalFlip:
               sample: Dict['video', 'caption'] - videoTensor (Time, Height, Width, Channel)
         '''
         video, caption, video_file = sample['video'], sample['caption'], sample['video_file']
-        flip = True if random.random > 0.5 else False
+        flip = True if random.random() > 0.5 else False
 
         if flip is True:
-            video = video[:, :, :, ::-1]
+            video = video.flip(2)
 
         return {'video': video, 'caption': caption, 'video_file': video_file}
+
+class VideoHorizontalFlip:
+    def __init__(self):
+        pass
+
+    def __call__(self, sample):
+        video, caption, video_file = sample['video'], sample['caption'], sample['video_file']
+
+        video = video.flip(2)
+
+        return {'video': video, 'caption': caption, 'video_file': video_file}
+        
 
 
 class VideoRandomCrop:
@@ -185,9 +221,22 @@ class VideoTranspose:
 
 def mvad_basic_transform():
     transform = VideoCompose([
-        VideoResize((256, 256)),
+        VideoResizePreserve(256),
         VideoToTensor(),
         VideoCenterCrop((224, 224)),
+        VideoToFloat(),
+        VideoNormalize(0.5, 0.5),
+        VideoTranspose(),
+    ])
+    return transform
+
+def mvad_augment_transform():
+    transform = VideoCompose([
+        VideoResizePreserve(256),
+        VideoToTensor(),
+        VideoRandomHorizontalFlip(),
+        VideoCenterCrop((224, 224)),
+        #VideoRandomCrop((224, 224)),
         VideoToFloat(),
         VideoNormalize(0.5, 0.5),
         VideoTranspose(),
