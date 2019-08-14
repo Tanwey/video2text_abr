@@ -42,4 +42,4 @@ class Captioner:
             inp_key_padding_mask = sample[3]
             mem_key_padding_mask = sample[5]
             predicted_string = self.caption_video(feature, inp_key_padding_mask, mem_key_padding_mask)
-            print('video: {} caption origin: {} caption predict: {}'.format(video_file, self.id_to_string(caption), predicted_string))
+            print('video: {}\ncaption origin: {}\ncaption predict: {}\n'.format(video_file, self.id_to_string(caption), predicted_string))

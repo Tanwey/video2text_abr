@@ -201,7 +201,9 @@ class Transformer(nn.Module):
         self.dff = dff
         self.dropout = dropout
         self.max_seq_length = max_seq_length
-
+        
+            
+        self.linear = nn.Linear(1024, d_model)
         self.pe = PositionalEncoder(max_seq_length, d_model)
         self.encoder = TransformerEncoder(
             d_model, num_heads, encoder_num_layers, dff, dropout)
@@ -224,6 +226,7 @@ class Transformer(nn.Module):
             Returns:
               x: Tensor (batch, seq, vocab_size)
         '''
+        inp = self.linear(inp)
         inp_s, inp_b, inp_d = inp.size()
         inp = self.pe(inp)
 

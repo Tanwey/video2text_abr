@@ -77,3 +77,25 @@ class ExtractedFeatureDataset(Dataset):
         tar_key_padding_mask = create_padding_mask_from_data(caption[:-1])
 
         return feature, caption, video_file, inp_key_padding_mask, tar_key_padding_mask, mem_key_padding_mask
+
+    
+class ExtractedFeatureDatasetOnlyFeature(Dataset):
+    def __init__(self, feature_path, feature_files=None, transform=None):
+        self.feature_path = feature_path
+        if feature_path is None:
+            self.feature_files = feature_files
+        else:
+            self.feature_files = glob.glob(os.path.join(feature_path, '*'))
+        self.transform = transform
+        
+    def __len__(self):
+        return len(self.feature_files)
+    
+    def __getitem__(self, index):
+        feature_file = self.feature_files[index]
+        feature = torch.from_numpy(np.load(feature_file))
+        
+        if self.transform is not None:
+            feature = self.transform(feature)
+        return feature
+        

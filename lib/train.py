@@ -21,16 +21,16 @@ import os
 import datetime
 
 tar_vocab_size = 5000
-d_model = 1024
+d_model = 512
 num_heads = 8
-encoder_num_layers = 2
-decoder_num_layers = 4
+encoder_num_layers = 4
+decoder_num_layers = 6
 dff = 2048
 dropout = 0.1
 max_seq_length = 80  # For positional encoding
 inp_max_seq_length = 50
 tar_max_seq_length = 50
-cuda_device = 'cuda:1'
+cuda_device = 'cuda:0'
 
 #feature_path = '../MVAD/I3D_rgb_kinetics/train'
 feature_path = None
@@ -39,7 +39,7 @@ train_feature_path = '../MVAD/I3D_rgb_kinetics/train'
 with open('../MVAD/train_fine') as f:
     files = f.readlines()
     feature_files = list(map(lambda file: os.path.join(train_feature_path, str.strip(file) + '.npy'), files))
-    feature_files.append(list(map(lambda file: os.path.join(train_feature_path + '_fliped', str.strip(file) + '.npy'), files)))
+    feature_files.extend(list(map(lambda file: os.path.join(train_feature_path + '_fliped', str.strip(file) + '.npy'), files)))
                         
 corpus_file = '../MVAD/corpus_M-VAD_train.txt'
 tokenizer_file = 'tokenizer.model'
@@ -48,7 +48,7 @@ checkpoint = os.path.join('../checkpoint', start_datetime)
 os.mkdir(checkpoint)
 tensorboard_dir = os.path.join('../logs', start_datetime)
 BATCH = 64
-EPOCH = 40
+EPOCH = 50
 beta1 = 0.9
 beta2 = 0.98
 lr = 0.0001
