@@ -9,9 +9,9 @@ videos with captions
 - #### Caption Statistics
 
 <figure>
-<img src="document/train_corpus.png" width=400 height=300>
+<img src="document/assets/train_corpus.png" width=400 height=300>
 <figcaption>Train caption statistics</figcaption>
-<img src="document/test_corpus.png" width=400 height=300>
+<img src="document/assets/test_corpus.png" width=400 height=300>
 <figcaption>Test caption statistics</figcaption>
 </figure>
 
@@ -23,7 +23,7 @@ Extract feature with I3D_rgb, generate caption with transformer
 
 <a href="https://arxiv.org/abs/1705.07750">Quo Vadis, Action Recognition? A New Model and the Kinetics Dataset </a>
 
-<img src="document/I3D.jpeg" width=800>
+<img src="document/assets/I3D.jpeg" width=800>
 
 1. Resize to (channel, seq, 256, 256)
 2. Center Crop (channel, seq, 224, 224)
@@ -36,9 +36,9 @@ Extract feature with I3D_rgb, generate caption with transformer
 - #### Feature Statistics
 
 <figure>
-<img src="document/train_corpus.png" width=400 height=300>
+<img src="document/assets/train_corpus.png" width=400 height=300>
 <figcaption>Train feature statistics</figcaption>
-<img src="document/test_corpus.png" width=400 height=300>
+<img src="document/assets/test_corpus.png" width=400 height=300>
 <figcaption>Test feature statistics</figcaption>
 </figure>
 
@@ -46,7 +46,7 @@ Extract feature with I3D_rgb, generate caption with transformer
 
 <a href="https://arxiv.org/abs/1706.03762">Attention is All You Need</a>
 
-<img src="document/transformer_model.png">
+<img src="document/assets/transformer_model.png">
 
 - As inpus are not sentence, input embedding is removed from encoder.
 - Original transformer encoder is made of 6 encoder layers. But as features are already extracted from I3D_rgb, used less encoder layers. Also captions lengths are not that long, used less decoder layers whereas original has 6 layers.
