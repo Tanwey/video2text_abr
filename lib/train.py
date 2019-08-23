@@ -7,7 +7,7 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from dataset_extracted import ExtractedFeatureDataset
+from dataset.dataset_extracted import ExtractedFeatureDataset
 
 from models.transformer import Transformer, create_look_ahead_mask
 from models.optimizer import ScheduledOptim
@@ -23,7 +23,7 @@ import datetime
 tar_vocab_size = 5000
 d_model = 512
 num_heads = 8
-encoder_num_layers = 4
+encoder_num_layers = 6
 decoder_num_layers = 6
 dff = 2048
 dropout = 0.1
@@ -48,7 +48,7 @@ checkpoint = os.path.join('../checkpoint', start_datetime)
 os.mkdir(checkpoint)
 tensorboard_dir = os.path.join('../logs', start_datetime)
 BATCH = 64
-EPOCH = 50
+EPOCH = 100
 beta1 = 0.9
 beta2 = 0.98
 lr = 0.0001
@@ -57,7 +57,7 @@ lr = 0.0001
 
 def accuracy_metrics(predict, target):
     matched_matrix = (torch.max(predict, dim=-1)[1] == target)
-    mask = (target != 0)
+    mask = (target != 0) | (matched_matrix != 0) 
     matched_matrix = matched_matrix * mask
     acc = matched_matrix.type(torch.float).sum() / mask.type(torch.float).sum()
     return acc * 100.0
@@ -84,6 +84,7 @@ def main():
     caption_transform = transforms.Compose([
         transforms.CaptionPadding(tar_max_seq_length, sp.PieceToId('<PAD>'))
     ])
+    
 
     # Dataset
     train_dataset = ExtractedFeatureDataset(

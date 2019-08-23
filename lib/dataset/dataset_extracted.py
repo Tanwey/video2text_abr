@@ -3,9 +3,9 @@ from torch.utils.data import Dataset
 import numpy as np
 import os
 import glob
-from datasetMVAD import MVADCorpusReader
+from dataset.datasetMVAD import MVADCorpusReader
 import re
-from models.transformer import create_padding_mask_from_size, create_padding_mask_from_data
+from utils import create_padding_mask_from_size, create_padding_mask_from_data
 
 
 # Max sequence Length

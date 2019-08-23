@@ -22,6 +22,7 @@ class PositionalEncoder(nn.Module):
         self.pe = self.pe.unsqueeze(1)
         assert self.pe.size(0) == max_seq_length
         assert self.pe.size(2) == d_model
+        self.pe = nn.Parameter(self.pe, requires_grad=False)
 
     def forward(self, x):
         '''
@@ -39,11 +40,6 @@ class PositionalEncoder(nn.Module):
         d = torch.arange(d_model, dtype=torch.float).view((1, d_model))
         angle = p / torch.pow(10000.0, (2 * (d // 2) / d_model))
         return angle
-
-    def to(self, *args, **kwargs):
-        self = super(PositionalEncoder, self).to(*args, **kwargs)
-        self.pe = self.pe.to(*args, **kwargs)
-        return self
 
 
 class FeedForward(nn.Module):
@@ -254,11 +250,6 @@ class Transformer(nn.Module):
         assert x.size(2) == self.tar_vocab_size
 
         return x
-
-    def to(self, *args, **kwargs):
-        self = super(Transformer, self).to(*args, **kwargs)
-        self.pe.pe = self.pe.pe.to(*args, **kwargs)
-        return self
 
 
 def create_padding_mask_from_size(size, real_size):

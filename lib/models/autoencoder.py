@@ -18,6 +18,6 @@ class Autoencoder(nn.Module):
         return x
         
     def __call__(self, x):
-        x = F.leaky_relu(self.encoder_linear1(x))
+        x = self.encoder_linear1(x)
         x = self.decoder_linear1(x)
         return x
