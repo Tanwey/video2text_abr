@@ -3,10 +3,10 @@ import torch
 
 def create_padding_mask_from_size(size, real_size):
     '''
-        Args:
-          size: sequense length (int)
-          real_size: real sequence lenght (int)
-        Returns:
+    Args:
+        size: sequense length (int)
+        real_size: real sequence length (int)
+    Returns:
           mask: Mask Tensor (seq)
     assert size > real_size
     '''
@@ -17,10 +17,10 @@ def create_padding_mask_from_size(size, real_size):
 
 def create_padding_mask_from_data(data):
     '''
-        Args:
-          data: Tensor (seq)
-        Returns:
-          mask: Mask Tensor (seq)
+    Args:
+        data: Tensor (seq)
+    Returns:
+        mask: Mask Tensor (seq)
     '''
     mask = (data == 0).type(torch.uint8)
     return mask
@@ -28,10 +28,10 @@ def create_padding_mask_from_data(data):
 
 def create_look_ahead_mask(size):
     '''
-        Args:
-          size: Sequence(time) size of data
-        Returns:
-          mask: Upper triangular matrix with -1e9 (size, size)
+    Args:
+        size: Sequence(time) size of data
+    Returns:
+        mask: Upper triangular matrix with -1e9 (size, size)
     '''
     mask = torch.triu(torch.ones(size, size), 1)
     mask = mask.float().masked_fill(mask == 1, float(

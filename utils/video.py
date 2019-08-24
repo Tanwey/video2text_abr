@@ -13,7 +13,6 @@ def read_video(video_file, rgb=True):
                 video_frames.append(np.expand_dims(frame[:, :, ::-1], axis=0))
             elif rgb is False:
                 video_frames.append(np.expand_dims(frame, axis=0))
-
         else:
             break
 
@@ -26,9 +25,10 @@ def read_video(video_file, rgb=True):
 
 
 def video_info(video_file):
-    cap = cv2.VideoWriter(video_file)
+    cap = cv2.VideoCapture(video_file)
     print('Frame Count: {}'.format(cap.get(cv2.CAP_PROP_FRAME_COUNT)))
     print('Frame Height: {}, Width: {}'.format(
         cap.get(cv2.CAP_PROP_FRAME_HEIGHT), cap.get(cv2.CAP_PROP_FRAME_WIDTH)))
     print('Frame Count: {}'.format(cap.get(cv2.CAP_PROP_FPS)))
     cap.release()
+
