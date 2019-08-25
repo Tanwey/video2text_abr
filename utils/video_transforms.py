@@ -120,7 +120,7 @@ class VideoToNumpy:
             video (ndarray[Time, Height, Width, Channel])
         """
         video = video.numpy()
-        video = video.permute([1, 2, 3, 0])
+        video = video.transpose([1, 2, 3, 0])
         return video
 
 
