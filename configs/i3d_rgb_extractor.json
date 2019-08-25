@@ -1,0 +1,14 @@
+{
+  "agent": "",
+  "tar_vocab_size": 5000,
+  "d_model": 512,
+  "num_heads": 8,
+  "encoder_num_layers": 6,
+  "decoder_num_layers": 6,
+  "dff": 2048,
+  "dropout": 0.1,
+  "max_seq_length": 80,
+  "inp_max_seq_length": 50,
+  "tar_max_seq_length": 50,
+  "cuda_device": "cuda:0"
+}
