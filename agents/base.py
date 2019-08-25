@@ -3,6 +3,39 @@ import numpy as np
 import time
 import os
 import logging
+from glob import glob
+from utils.video import read_video, save_video
+
+
+class BaseVideoSaveAgent:
+    def __init__(self, src_dir, tar_dir):
+        self.src_dir = src_dir
+        self.src_videos = glob(os.path.join(src_dir, '*'))
+        self.tar_dir = tar_dir
+
+    def run():
+        for i, src_video in enumerate(self.src_videos, start=1):
+            try:
+                step(src_video)
+            except:
+                print('Error in {}'.src_video)
+            if i % 100:
+                print('{} has processed'.format(i))
+
+    def step(src_video):
+        video = read_video(src_video, rgb=True)
+
+        video = process(video)
+
+        file_name = os.path.split(src_video)[-1]
+        save_path = os.path.join(self.tar_dir, file_name)
+        save_video(video, save_path)
+
+    def process(video):
+        return NotImplementedError
+
+    def finalize():
+        return NotImplementedError
 
 
 class BaseFeatureExtractor:

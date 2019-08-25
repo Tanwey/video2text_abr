@@ -319,6 +319,7 @@ class InceptionI3d(nn.Module):
                                      stride=(1, 1, 1))
 
         if self._final_endpoint == end_point:
+            self.build()
             return
 
         end_point = 'Logits'
@@ -354,9 +355,6 @@ class InceptionI3d(nn.Module):
                 x = self._modules[end_point](x)
 
         x = self.avg_pool(x)
-        if end_point != 'Logits':
-            return x
-
         x = self.logits(self.dropout(x))
         if self._spatial_squeeze:
             logits = x.squeeze(3).squeeze(3)
@@ -367,4 +365,7 @@ class InceptionI3d(nn.Module):
         for end_point in self.VALID_ENDPOINTS:
             if end_point in self.end_points:
                 x = self._modules[end_point](x)
-        return self.avg_pool(x)
+        x = self.avg_pool(x)
+        if self._spatial_squeeze is True:
+            x = x.squeeze(3).squeeze(3)
+        return x

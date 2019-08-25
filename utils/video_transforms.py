@@ -59,7 +59,7 @@ class VideoResize:
 
 
 class VideoResizePreserve:
-    def __init__(self, min_size:int = 256):
+    def __init__(self, min_size: int = 256):
         """Resize video preserving ratio
         When reduce size, it will apply INTER_AREA interpolation,
         and expand size, it will apply INTER_CUBIC interpolation
@@ -105,7 +105,24 @@ class VideoToTensor:
         video = torch.from_numpy(video)
         video = video.permute([3, 0, 1, 2])
         return video
-    
+
+
+class VideoToNumpy:
+    def __init__(self):
+        """Tensor to numpy array + Transpose from (Channel, Time, Height, Width) to (Time, Height, Width, Channel)"""
+        pass
+
+    def __call__(self, video):
+        """
+        Args:
+            video (Tensor[Channel, Time, Height, Width])
+        Return:
+            video (ndarray[Time, Height, Width, Channel])
+        """
+        video = video.numpy()
+        video = video.permute([1, 2, 3, 0])
+        return video
+
 
 class VideoHorizontalFlip:
     def __init__(self):
@@ -123,8 +140,6 @@ class VideoHorizontalFlip:
         video = video.flip(3)
 
         return video
-
-
 
 
 class VideoRandomHorizontalFlip(VideoHorizontalFlip):
@@ -148,6 +163,7 @@ class VideoRandomHorizontalFlip(VideoHorizontalFlip):
             video = super(VideoRandomHorizontalFlip, self).__call__(video)
 
         return video
+
 
 class VideoRandomCrop:
     def __init__(self, size):
