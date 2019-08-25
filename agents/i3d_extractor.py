@@ -1,11 +1,15 @@
 import torch
 import numpy as np
+import os
 
 from graph.models.i3d import InceptionI3d
 import utils.video_transforms as video_transforms
+from agents.base import BaseAgent
+from datasets.video_dataset import VideoDatasetFromDir
+from utils.video import save_video
 
 
-class I3dResizeAndCrop:
+class I3dResize:
     def __init__(self, return_tensor=False):
         """Resizing and Cropping video
         I3D use video that resize to 256 preserving ratio and crop to (224, 224)
@@ -31,11 +35,21 @@ class I3dResizeAndCrop:
             video (ndarray[Time, Height, Width, Channel])
             # If return_tensor is True (Tensor[Channel, Time, Height, Width])
         """
-        video = self.transform(video)
-        return video
+        # if video.shape[0] > 500:
+        #     partial_list = []
+        #     count = (video.shape[0] // 500) + 1
+        #     for i in range(count):
+        #         print(i)
+        #         partial_list.append(self.transform(
+        #             video[500 * i: 500 * (i + 1)]))
+        #     resized_video = np.concatenate(partial_list, axis=0)
+        # else:
+        #     resized_video = self.transform(video)
+        resized_video = self.transform(video)
+        return resized_video
 
 
-class I3dTV_L1:
+class I3dOpticalFlow:
     def __init__(self):
         pass
 
@@ -74,7 +88,8 @@ class I3dRGBExtractor:
         assert video.size(3) == 224
         assert video.size(4) == 224
         video = video.to(self.device)
-        rgb_feature = self.model.extract_features(video).squeeze(0).transpose(0, 1)
+        rgb_feature = self.model.extract_features(
+            video).squeeze(0).transpose(0, 1)
         return rgb_feature
 
 
@@ -111,5 +126,6 @@ class I3dFlowExtractor:
         assert flow.size(3) == 224
         assert flow.size(4) == 224
         flow = flow.to(self.device)
-        flow_feature = self.model.extract_features(flow).squeeze(0).transpose(0, 1)
+        flow_feature = self.model.extract_features(
+            flow).squeeze(0).transpose(0, 1)
         return flow_feature

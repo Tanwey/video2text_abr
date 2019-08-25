@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import Dataset
 from glob import glob
 import os
-from utils.video import read_video
+from utils.video import read_video, video_info
 
 
 class BaseVideoDataset(Dataset):
@@ -12,7 +12,9 @@ class BaseVideoDataset(Dataset):
             video_files (List[str]): List of video files 
             transform (Compose): Compose object of transforms
 
-        __getitem__ returns Dict['video', 'video_file']
+        __getitem__:
+            returns Dict['video', 'video_file', 'video_info']
+                'video_info': Dict['count', 'height', 'width', 'fps']
         """
         super(BaseVideoDataset, self).__init__()
         self.video_files = video_files
@@ -23,7 +25,7 @@ class BaseVideoDataset(Dataset):
         video = read_video(video_file)
         if self.transform is not None:
             video = self.transform(video)
-        return {'video': video, 'video_file': video_file}
+        return {'video': video, 'video_file': video_file, 'video_info': video_info(video_file)}
 
     def __len__(self):
         return len(self.video_files)
@@ -38,7 +40,9 @@ class VideoDatasetFromDir(BaseVideoDataset):
             recursive (bool): If True recursively search files
             transform (Compose): Compose object of transforms
 
-        __getitem__ returns Dict['video', 'video_file']
+        __getitem__:
+            returns Dict['video', 'video_file', 'video_info']
+            'video_info': Dict['count', 'height', 'width', 'fps']
         """
         self.video_dir = video_dir
         if recursive is False:
@@ -62,7 +66,9 @@ class VideoDatasetFromDirs(BaseVideoDataset):
             recursive (bool): If True recursively search files
             transform (Compose): Compose object of transforms
 
-        __getitem__ returns Dict['video', 'video_file']
+        __getitem__:
+            returns Dict['video', 'video_file']
+            'video_info': Dict['count', 'height', 'width', 'fps']
         """
         self.video_dirs = video_dirs
         video_files = []

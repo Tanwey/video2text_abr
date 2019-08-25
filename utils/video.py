@@ -24,8 +24,6 @@ def read_video(video_file, rgb=True):
         else:
             break
 
-    if cap.get(cv2.CAP_PROP_FRAME_COUNT) == len(video_frames):
-        print('All read')
     video = np.concatenate(video_frames, axis=0)
     cap.release()
 
@@ -67,7 +65,7 @@ def save_video(video, save_path, fps=29.983304595341707):
         save_path (str)
         fps (float): Frames per second of video
     """
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(save_path, fourcc, fps,
                           (video.shape[2], video.shape[1]))
 
