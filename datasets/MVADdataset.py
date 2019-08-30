@@ -54,6 +54,10 @@ class MVADCaption:
 
 class MVADFeatureDataset(Dataset):
     def __init__(self, feature_dir=None, feature_files=None, corpus_file=None, inp_max_sequence_size=None, tar_max_sequence_size=None, sp_processor=None, cut_sequence=False, feature_transform=None, caption_transform=None):
+        """
+        __getitem__:
+            sample (Dict['feature', 'feature_file', 'caption', 'token', inp_key_padding_mask', 'tar_key_padding_mask', 'mem_key_padding_mask'])
+        """
         # Feature dataset
         if feature_dir is not None:
             self.feature_dataset = FeatureDatasetFromDir(
