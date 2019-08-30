@@ -1,0 +1,23 @@
+{
+  "train_feature_dir": null,
+  "val_feature_dir": null,
+  "test_feature_dir": null,
+
+  "batch_size": null,
+  "epoch": null,
+  "learning_rate": null,
+  "beta1": null,
+  "beta2": null,
+  "d_model": 512,
+  "num_heads": 8,
+  "encoder_num_layers": 6,
+  "decoder_num_layers": 6,
+  "dff": 2048,
+  "dropout": 0.1,
+
+  "tokenizer_file": null,
+  "tar_vocab_size": 5000,
+
+  "save_checkpoint": null,
+  "load_checkpoint": null
+}

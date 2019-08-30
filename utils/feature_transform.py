@@ -6,8 +6,9 @@ class FeaturePadding:
         """Pad to feature
         Args:
             max_sequence_size (int): Sequence size after padding
-            cut_sequence (bool): If True, when feature sequence is longer than max_sequence, cut the feature.
-                If False, when feature sequence is longer than max_sequence, alert error.
+            pad_value (float, default: 0): Padding value
+            cut_sequence (bool): If True, when feature sequence is longer than max_sequence_size, cut the feature.
+                If False, when feature sequence is longer than max_sequence_size, alert error.
         """
         self.max_sequence_size = max_sequence_size
         self.pad_value = pad_value
@@ -29,6 +30,6 @@ class FeaturePadding:
 
         padded_feature = torch.full(
             (self.max_sequence_size, d_model), self.pad_value)
-        padded_feature[:seq_size] = feature
+        padded_feature[:seq_size] = feature[:seq_size]
 
         return padded_feature

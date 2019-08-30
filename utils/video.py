@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from easydict import EasyDict
+import os
 
 
 def read_video(video_file, rgb=True):
@@ -58,13 +59,18 @@ def video_info(video_file, verbose=False):
     return info
 
 
-def save_video(video, save_path, fps=29.983304595341707):
+def save_video(video, save_path, fps=29.983304595341707, overwrite=False):
     """
     Args:
         video (ndarray[Time, Height, Width, Channel])
         save_path (str)
         fps (float): Frames per second of video
+        overwrite (bool, default: False): If True, Overwrite file, although file exists.
     """
+    if overwrite is False:
+        if os.path.exists(save_path) is True:
+            print('File already exists')
+            return
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(save_path, fourcc, fps,
                           (video.shape[2], video.shape[1]))

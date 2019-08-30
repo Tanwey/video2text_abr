@@ -15,9 +15,9 @@ class BaseFeatureDataset(Dataset):
             feature_files (List[str]): List of feature files 
             max_sequence_size (int, default: None): Maximum sequence length to pad. If None no padding
             pad_value (int, default: 0): Value for padding
-            cut_sequence (bool): If True, when feature sequence is longer than max_sequence, cut the feature.
-                If False, when feature sequence is longer than max_sequence, alert error.
-            transform (Compose): Compose object of transforms
+            cut_sequence (bool, default: False): If True, when feature sequence is longer than max_sequence_size, cut the feature.
+                If False, when feature sequence is longer than max_sequence_size, alert error.
+            transform (Compose, default: None): Compose object of transforms
 
         __getitem__:
             Returns Dict['feature', 'feature_file']
