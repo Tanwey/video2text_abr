@@ -31,12 +31,16 @@ class TransformerAgent(BaseAgent):
             dropout=self.config.dropout,
             max_seq_length=self.config.max_seq_length)
 
+        # Tokenizer
+        self.sp = spm.SentencePieceProcessor()
+        self.sp.Load(self.config.tokenizer_file)
+
         # Dataset
         if self.config.train_feature_list_file is not None:
             with open(self.config.train_feature_list_file, 'r') as f:
                 train_feature_files = f.readlines()
             train_dataset = MVADFeatureDataset(
-                train_feature_files, self.config.train_corpus_file)
+                train_feature_files, self.config.train_corpus_file, self.config.inp_max_sequence_size, self.config.tar_max_sequence_size, self.sp, self.config.cut_sequence)
             train_dataloader = torch.utils.DataLoader(
                 train_dataset, batch_size=self.config.batch_size, suffle=True)
 
@@ -44,7 +48,7 @@ class TransformerAgent(BaseAgent):
             with open(self.config.val_feature_list_file, 'r') as f:
                 val_feature_files = f.readlines()
             val_dataset = MVADFeatureDataset(
-                val_feature_files, self.config.val_corpus_file)
+                val_feature_files, self.config.val_corpus_file, self.config.inp_max_sequence_size, self.config.tar_max_sequence_size, self.sp, self.config.cut_sequence)
             val_dataloader = torch.utils.DataLoader(
                 val_dataset, batch_size=1, suffle=False)
 
@@ -52,7 +56,7 @@ class TransformerAgent(BaseAgent):
             with open(self.config.test_feature_list_file, 'r') as f:
                 test_feature_files = f.readlines()
             test_dataset = MVADFeatureDataset(
-                test_feature_files, self.config.test_corpus_file)
+                test_feature_files, self.config.test_corpus_file, self.config.inp_max_sequence_size, self.config.tar_max_sequence_size, self.sp, self.config.cut_sequence)
             test_dataloader = torch.utils.DataLoader(
                 test_dataset, batch_size=1, suffle=False)
 
@@ -62,10 +66,6 @@ class TransformerAgent(BaseAgent):
         # Optimizer
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.config.learning_rate,
                                     betas=(self.config.beta1, self.config.beta2), eps=1e-9)
-
-        # Tokenizer
-        self.sp = spm.SentencePieceProcessor()
-        self.sp.Load(self.config.tokenizer_file)
 
         # Tensorboard
         if self.config.summary_writer_dir is not None:
@@ -105,6 +105,7 @@ class TransformerAgent(BaseAgent):
                 validate()
 
     def train_one_epoch(self):
+        train_loss = 0
         self.model.train()
         for batch, sample in enumerate(self.train_dataloader, start=1):
             # Predict
@@ -125,17 +126,22 @@ class TransformerAgent(BaseAgent):
             prediction = self.model(feature, token_inp, inp_key_padding_mask,
                                     tar_key_padding_mask, mem_key_padding_mask, tar_attn_mask=tar_attn_mask)
 
+            # Eval
             loss = self.criterion(prediction.transpose(1, 2), token_tar)
+            train_loss += loss.item()
+            # TODO: Blue, Meteor
 
             # Backprop
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
 
-            # Eval
-            # TODO: Blue, Meteor
-            self.save_checkpoint()
-            # TODO: Summary writer
+        self.save_checkpoint()
+        # TODO: Summary writer
+        self.summary_writer.add_scalar(
+            'loss/train', train_loss / batch, self.current_epoch)
+        self.summary_writer.add_scalar(
+            'accuracy/train', train_accuracy / batch, self.current_epoch)
 
     def validate(self):
         self.model.eval()
