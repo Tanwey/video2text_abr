@@ -3,7 +3,6 @@ from torch.utils.data import Dataset
 import numpy as np
 import os
 import glob
-from datasets.MVADvideo_dataset import MVADCorpusReader
 import re
 from functools import reduce
 
@@ -28,7 +27,7 @@ class MVADCaption:
         get_caption:
             Args:
                 video_file (str)
-            Returs:
+            Returns:
                 caption (str)
         """
         self.corpus_file = corpus_file
@@ -53,21 +52,18 @@ class MVADCaption:
 
 
 class MVADFeatureDataset(Dataset):
-    def __init__(self, feature_dir=None, feature_files=None, corpus_file=None, inp_max_sequence_size=None, tar_max_sequence_size=None, sp_processor=None, cut_sequence=False, feature_transform=None, caption_transform=None):
+    def __init__(self, feature_files=None, corpus_file=None, inp_max_sequence_size=None, tar_max_sequence_size=None, sp_processor=None, cut_sequence=False, feature_transform=None, caption_transform=None):
         """
         __getitem__:
             sample (Dict['feature', 'feature_file', 'caption', 'token', inp_key_padding_mask', 'tar_key_padding_mask', 'mem_key_padding_mask'])
         """
         # Feature dataset
-        if feature_dir is not None:
-            self.feature_dataset = FeatureDatasetFromDir(
-                feature_dir, max_sequence_size=inp_max_sequence_size, cut_sequence=cut_sequence, transform=feature_transform)
-        elif feature_files is not None:
+        if feature_files is not None:
             self.feature_dataset = BaseFeatureDataset(
                 feature_files, max_sequence_size=inp_max_sequence_size, cut_sequence=cut_sequence, transform=feature_transform)
             feature_files = self.feature_dataset.feature_files
         else:
-            assert (feature_files is not None) or (feature_dir is not None)
+            assert (feature_files is not None)
         self.feature_files = feature_files
         self.inp_max_sequence_size = inp_max_sequence_size
 
@@ -127,69 +123,3 @@ class MVADFeatureDataset(Dataset):
 
     def __len__(self):
         return len(self.feature_files)
-
-
-class ExtractedFeatureDataset(Dataset):
-    def __init__(self, feature_path=None, feature_files=None, corpus_file=None, inp_max_sequence_size=None, tar_max_sequence_size=None, sp_processor=None, feature_transform=None, caption_transform=None):
-        '''Load Extracted Feature of Video, tokenized caption, metadata, and masks
-            Args:
-              feature_path: If None, feature_file should be given
-              corpus_path:
-              inp_max_sequence:
-              tar_max_sequence:
-              sp_processor:
-              feature_transform:
-              caption_transform:
-              feature_files: If featuer_path is None, get from feature_files
-            Getitem:
-              feature:
-              caption:
-              video_file:
-              inp_key_padding_mask:
-              tar_key_padding_mask:
-              mem_key_padding_mask:
-        '''
-        if feature_path is not None:
-            self.feature_path = feature_path
-            self.feature_files = glob.glob(os.path.join(feature_path, '*'))
-        else:
-            self.feature_files = feature_files
-
-        self.corpus_path = corpus_path
-        self.inp_max_sequence_size = inp_max_sequence_size
-        self.tar_max_sequence_size = tar_max_sequence_size
-        self.sp_processor = sp_processor
-        self.feature_transform = feature_transform
-        self.caption_transform = caption_transform
-        self.corpus_reader = MVADCorpusReader(corpus_path)
-
-    def __len__(self):
-        return len(self.feature_files)
-
-    def __getitem__(self, index):
-        feature_file = self.feature_files[index]
-        video_file = re.sub('\.npy$', '', os.path.split(feature_file)[-1])
-        feature = torch.from_numpy(np.load(feature_file))  # (seq, d_model)
-        if feature.size(0) > self.inp_max_sequence_size:
-            return
-        caption = self.corpus_reader.get_corpus()[video_file]  # string
-        caption = [self.sp_processor.PieceToId('<s>')] + self.sp_processor.EncodeAsIds(caption) + \
-            [self.sp_processor.PieceToId('</s>')]  # list[int]
-        if len(caption) > self.tar_max_sequence_size:
-            return
-
-        inp_key_padding_mask = create_padding_mask_from_size(
-            self.inp_max_sequence_size, feature.shape[0])
-        mem_key_padding_mask = inp_key_padding_mask
-
-        caption = torch.IntTensor(caption)
-
-        if self.feature_transform is not None:
-            feature = self.feature_transform(feature)
-
-        if self.caption_transform is not None:
-            caption = self.caption_transform(caption).type(torch.int64)
-
-        tar_key_padding_mask = create_padding_mask_from_data(caption[:-1])
-
-        return feature, caption, video_file, inp_key_padding_mask, tar_key_padding_mask, mem_key_padding_mask

@@ -11,6 +11,7 @@ from agents.base import BaseNNAgent
 from graph.models.transformer import Transformer
 from utils.mask import create_look_ahead_mask
 from datasets.MVADdataset import MVADFeatureDataset
+from utils.beam_search import BeamSearch
 
 
 class TransformerAgent(BaseAgent):
@@ -31,10 +32,29 @@ class TransformerAgent(BaseAgent):
             max_seq_length=self.config.max_seq_length)
 
         # Dataset
-        # TODO: Dataset
-        train_dataset = MVADFeatureDataset(feature_files, corpus_file)
-        train_dataloader = torch.utils.DataLoader(
-            train_dataset, batch_size=self.config.batch_size, suffle=True)
+        if self.config.train_feature_list_file is not None:
+            with open(self.config.train_feature_list_file, 'r') as f:
+                train_feature_files = f.readlines()
+            train_dataset = MVADFeatureDataset(
+                train_feature_files, self.config.train_corpus_file)
+            train_dataloader = torch.utils.DataLoader(
+                train_dataset, batch_size=self.config.batch_size, suffle=True)
+
+        if self.config.val_feature_list_file is not None:
+            with open(self.config.val_feature_list_file, 'r') as f:
+                val_feature_files = f.readlines()
+            val_dataset = MVADFeatureDataset(
+                val_feature_files, self.config.val_corpus_file)
+            val_dataloader = torch.utils.DataLoader(
+                val_dataset, batch_size=1, suffle=False)
+
+        if self.config.test_feature_list_file is not None:
+            with open(self.config.test_feature_list_file, 'r') as f:
+                test_feature_files = f.readlines()
+            test_dataset = MVADFeatureDataset(
+                test_feature_files, self.config.test_corpus_file)
+            test_dataloader = torch.utils.DataLoader(
+                test_dataset, batch_size=1, suffle=False)
 
         # Loss
         self.criterion = nn.CrossEntropyLoss(ignore_index=self.config.pad_id)
@@ -49,7 +69,7 @@ class TransformerAgent(BaseAgent):
 
         # Tensorboard
         if self.config.summary_writer_dir is not None:
-            self.writer = SummaryWriter(self.config.summary_writer_dir)
+            self.summary_writer = SummaryWriter(self.config.summary_writer_dir)
 
         # Load Check point
         if self.config.load_checkpoint is not None:
@@ -85,6 +105,7 @@ class TransformerAgent(BaseAgent):
                 validate()
 
     def train_one_epoch(self):
+        self.model.train()
         for batch, sample in enumerate(self.train_dataloader, start=1):
             # Predict
             feature = sample['feature'].transpose(
@@ -112,11 +133,28 @@ class TransformerAgent(BaseAgent):
             self.optimizer.step()
 
             # Eval
+            # TODO: Blue, Meteor
+            # TODO: Save Checkpoint
+            # TODO: Summary writer
 
     def validate(self):
-        pass
+        self.model.eval()
+        beam_search = BeamSearch(self.config.beam_k, self.model, self.config.start_id, self.config.end_id,
+                                 self.config.tar_max_seq_length, self.config.beam_min_length, self.config.beam_num_required)
+        for batch, sample in enumerate(self.val_dataloader):
+            # TODO: Beamsearch
+            model_inp = {
+
+            }
+            beam_search(model_inp)
+            # TODO: Blue, Meteor
+            # TODO: Summary writer
 
     def test(self):
+        self.model.eval()
+        # TODO: Beamsearch
+        # TODO: Blue, Meteor
+        # TODO: Summary writer
         pass
 
     def finalize(self):
