@@ -134,7 +134,7 @@ class TransformerAgent(BaseAgent):
 
             # Eval
             # TODO: Blue, Meteor
-            # TODO: Save Checkpoint
+            self.save_checkpoint()
             # TODO: Summary writer
 
     def validate(self):
