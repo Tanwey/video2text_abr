@@ -12,6 +12,7 @@ from graph.models.transformer import Transformer
 from utils.mask import create_look_ahead_mask
 from datasets.MVADdataset import MVADFeatureDataset
 from utils.beam_search import BeamSearch
+from utils.metrics import accuracy_batch
 
 
 class TransformerAgent(BaseAgent):
@@ -90,6 +91,9 @@ class TransformerAgent(BaseAgent):
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
     def run(self):
+        """If train_dataloader is not provided only test runs
+        train() contains train loop and validation loop
+        """
         if self.train_dataloader is not None:
             train()
 
@@ -97,6 +101,7 @@ class TransformerAgent(BaseAgent):
             test()
 
     def train(self):
+        """If val_dataloader is not provided only train runs"""
         for epoch in range(self.current_epoch, self.config.epoch):
             self.current_epoch = epoch
             train_one_epoch()
@@ -106,6 +111,7 @@ class TransformerAgent(BaseAgent):
 
     def train_one_epoch(self):
         train_loss = 0
+        train_accuracy = 0
         self.model.train()
         for batch, sample in enumerate(self.train_dataloader, start=1):
             # Predict
@@ -129,7 +135,8 @@ class TransformerAgent(BaseAgent):
             # Eval
             loss = self.criterion(prediction.transpose(1, 2), token_tar)
             train_loss += loss.item()
-            # TODO: Blue, Meteor
+
+            train_accuracy += accuracy_batch(prediction, token_tar)
 
             # Backprop
             self.optimizer.zero_grad()
@@ -137,7 +144,6 @@ class TransformerAgent(BaseAgent):
             self.optimizer.step()
 
         self.save_checkpoint()
-        # TODO: Summary writer
         self.summary_writer.add_scalar(
             'loss/train', train_loss / batch, self.current_epoch)
         self.summary_writer.add_scalar(
@@ -145,18 +151,38 @@ class TransformerAgent(BaseAgent):
 
     def validate(self):
         self.model.eval()
-        beam_search = BeamSearch(self.config.beam_k, self.model, self.config.start_id, self.config.end_id,
-                                 self.config.tar_max_seq_length, self.config.beam_min_length, self.config.beam_num_required)
-        for batch, sample in enumerate(self.val_dataloader):
-            # TODO: Beamsearch
-            model_inp = {
+        val_accuracy = 0
+        for batch, sample in enumerate(self.val_dataloader, start=1):
+            feature = sample['feature'].transpose(
+                0, 1).to(self.device)  # (seq, batch, 1024)
+            token = sample['token']
+            inp_key_padding_mask = sample['inp_key_padding_mask'].to(
+                self.device)
+            mem_key_padding_mask = sample['mem_key_padding_mask'].to(
+                self.device)
 
-            }
-            beam_search(model_inp)
-            # TODO: Blue, Meteor
-            # TODO: Summary writer
+            output = torch.Tensor(self.config.batch_size,
+                                  1).fill_(self.config.start_id).to(self.device)
+            for i in range(1, self.tar_max_seq_length):
+                tar_attn_mask = create_look_ahead_mask(i).to(self.device)
+                prediction = self.model(feature, output, inp_key_padding_mask,
+                                        mem_key_padding_mask=mem_key_padding_mask, tar_attn_mask=tar_attn_mask)
+                prediction = prediction[:, -1:, :]
+                predicted_id = torch.max(prediction, dim=-1)[1]
+                output = torch.cat((output, predicted_id), dim=1)
+
+            # Eval
+            val_accuracy += accuracy_batch(
+                prediction[:, 1:], token[:, 1:])
+        # TODO: Blue, Meteor
+        # self.summary_writer.add_scalar(
+        #     'loss/val', val_loss / batch, self.current_epoch)
+        self.summary_writer.add_scalar(
+            'accuracy/val', val_accuracy / batch, self.current_epoch)
 
     def test(self):
+        beam_search = BeamSearch(self.config.beam_k, self.model, self.config.start_id, self.config.end_id,
+                                 self.config.tar_max_seq_length, self.config.beam_min_length, self.config.beam_num_required)
         self.model.eval()
         # TODO: Beamsearch
         # TODO: Blue, Meteor
