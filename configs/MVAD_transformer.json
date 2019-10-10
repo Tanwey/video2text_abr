@@ -1,9 +1,0 @@
-{
-  "train_feature_dir": "data/MVAD/I3D_rgb_kinetics/train",
-  "val_feature_dir": "data/MVAD/I3D_rgb_kinetics/test",
-  "train_corpus_file": "data/MVAD/corpus_M-VAD_train.txt",
-  "val_corpus_file": "data/MVAD/corpus_M-VAD_test.txt",
-  "inp_max_sequence_size": 256,
-  "tar_max_sequence_size": 360,
-  "sp_processor_file": "data/MVAD/tokenizer.model"
-}

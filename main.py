@@ -1,8 +1,8 @@
 import argparse
 from easydict import EasyDict
 
-from agents import *
-from utils.config import get_config_from_json
+from agents.transformer_agent import TransformerAgent
+from utils.config import get_config
 
 
 def main(config):
@@ -12,23 +12,24 @@ def main(config):
     """
     if isinstance(config, EasyDict) is False:
         config = EasyDict(config)
-    # Create the Agent and pass all the configuration to it then run it..
-    agent_class = globals()[config.agent]
-    agent = agent_class(config)
+
+    if config.agent == "transformer_agent":
+        agent = TransformerAgent(config)
+
     agent.run()
     agent.finalize()
 
 
 if __name__ == '__main__':
-    # parse the path of the json config file
+    # parse the path of the yaml or json config file
     arg_parser = argparse.ArgumentParser(description="")
     arg_parser.add_argument(
         'config',
-        metavar='config_json_file',
+        metavar='config_yaml_or_json_file',
         default='None',
-        help='The Configuration file in json format')
+        help='The Configuration file in yaml or json format')
     args = arg_parser.parse_args()
 
-    config = get_config_from_json(args.config)
+    config = get_config(args.config)
 
     main(config)

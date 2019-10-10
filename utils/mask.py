@@ -10,7 +10,7 @@ def create_padding_mask_from_size(size, real_size):
           mask: Mask Tensor (seq)
     assert size > real_size
     '''
-    mask = torch.ones((size)).type(torch.uint8)
+    mask = torch.ones((size)).type(torch.bool)
     mask[:real_size] = 0
     return mask
 
@@ -22,7 +22,7 @@ def create_padding_mask_from_data(data):
     Returns:
         mask: Mask Tensor (seq)
     '''
-    mask = (data == 0).type(torch.uint8)
+    mask = (data == 0).type(torch.bool)
     return mask
 
 

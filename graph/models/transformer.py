@@ -187,10 +187,11 @@ class TransformerDecoder(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self, tar_vocab_size, d_model, num_heads, encoder_num_layers, decoder_num_layers, dff, dropout=0.1, max_seq_length=512):
+    def __init__(self, tar_vocab_size, encoder_d_model, decoder_d_model, num_heads, encoder_num_layers, decoder_num_layers, dff, dropout=0.1, max_seq_length=512):
         super(Transformer, self).__init__()
         self.tar_vocab_size = tar_vocab_size
-        self.d_model = d_model
+        self.encoder_d_model = encoder_d_model
+        self.decoder_d_model = decoder_d_model
         self.num_heads = num_heads
         self.encoder_num_layers = encoder_num_layers
         self.decoder_num_layers = decoder_num_layers
@@ -198,19 +199,20 @@ class Transformer(nn.Module):
         self.dropout = dropout
         self.max_seq_length = max_seq_length
 
-        self.linear = nn.Linear(1024, d_model)
-        self.pe = PositionalEncoder(max_seq_length, d_model)
+        self.linear1 = nn.Linear(1024, encoder_d_model)
+        self.encoder_pe = PositionalEncoder(max_seq_length, encoder_d_model)
+        self.decoder_pe = PositionalEncoder(max_seq_length, decoder_d_model)
         self.encoder = TransformerEncoder(
-            d_model, num_heads, encoder_num_layers, dff, dropout)
-        self.word_embedding = nn.Embedding(tar_vocab_size, d_model)
+            encoder_d_model, num_heads, encoder_num_layers, dff, dropout)
+        self.word_embedding = nn.Embedding(tar_vocab_size, decoder_d_model)
         self.decoder = TransformerDecoder(
-            d_model, num_heads, decoder_num_layers, dff, dropout)
-        self.emb2voc = nn.Linear(d_model, tar_vocab_size)
+            decoder_d_model, num_heads, decoder_num_layers, dff, dropout)
+        self.emb2voc = nn.Linear(decoder_d_model, tar_vocab_size)
 
     def forward(self, inp, tar, inp_key_padding_mask=None, tar_key_padding_mask=None, mem_key_padding_mask=None, inp_attn_mask=None, tar_attn_mask=None, mem_attn_mask=None):
         '''
             Args:
-              inp: (seq, batch, d_model)
+              inp: (seq, batch, encoder_d_model)
               tar: (batch, seq)
               inp_key_padding_mask: Key padding mask for encoder multiheadattention. Tensor (batch, seq) condist of 0, 1 (1 for pad).
               tar_key_padding_mask: Key padding mask for decoder first multiheadattention. Tensor (batch, seq) condist of 0, 1 (1 for pad).
@@ -221,16 +223,16 @@ class Transformer(nn.Module):
             Returns:
               x: Tensor (batch, seq, vocab_size)
         '''
-        inp = self.linear(inp)
+        inp = self.linear1(inp)
         inp_s, inp_b, inp_d = inp.size()
-        inp = self.pe(inp)
+        inp = self.encoder_pe(inp)
 
         mem = self.encoder(
             inp, key_padding_mask=inp_key_padding_mask, attn_mask=inp_attn_mask)
         mem_s, mem_b, mem_d = mem.size()
         assert mem_s == inp_s
         assert mem_b == inp_b
-        assert mem_d == self.d_model
+        assert mem_d == self.encoder_d_model
 
         tar_b, tar_s = tar.size()
         tar = self.word_embedding(tar)
@@ -239,7 +241,7 @@ class Transformer(nn.Module):
 
         tar = tar.transpose(0, 1)
 
-        tar = self.pe(tar)
+        tar = self.decoder_pe(tar)
         x = self.decoder(tar, mem, tar_key_padding_mask=tar_key_padding_mask,
                          mem_key_padding_mask=mem_key_padding_mask, tar_attn_mask=tar_attn_mask, mem_attn_mask=mem_attn_mask)
         x = self.emb2voc(x)
