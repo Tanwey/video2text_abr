@@ -12,7 +12,7 @@ def get_config(file):
 
     with open(file, 'r') as f:
         try:
-            config = yaml.load(f)
+            config = yaml.load(f, yaml.Loader)
             config = EasyDict(config)
             return config
         except:

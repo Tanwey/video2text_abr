@@ -3,16 +3,16 @@ device: "cuda:0"
 train:
   epoch: 70
   train_feature_list_file: data/MVAD/train_list_50
-  train_corpus_file: data/MVAD/corpus_M-VAD_train.txt
+  train_corpus_file: data/MVAD/corpus_M-VAD_train.yaml
   train_batch_size: 32
 val:
   val_feature_list_file: data/MVAD/val_list_50
-  val_corpus_file: data/MVAD/corpus_M-VAD_test.txt
+  val_corpus_file: data/MVAD/corpus_M-VAD_test.yaml
   val_batch_size: 32
   val_interval: 1
 test:
   test_feature_list_file: data/MVAD/test_list_50
-  test_corpus_file: data/MVAD/corpus_M-VAD_test.txt
+  test_corpus_file: data/MVAD/corpus_M-VAD_test.yaml
   test_batch_size: 32
 graph:
   model:

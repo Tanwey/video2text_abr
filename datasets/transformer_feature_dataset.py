@@ -4,56 +4,53 @@ import numpy as np
 import os
 import glob
 import re
-from functools import reduce
+import yaml
 
 from datasets.feature_dataset import FeatureDatasetFromDir, BaseFeatureDataset
 from utils.token_transforms import TokenPadding
 from utils.mask import create_padding_mask_from_size
 
 
-# Max sequence Length
+# Max sequence Length of MVAD
 # feature train 222
 # feature test 165
 # caption train 335
 # caption test 246
 
-class MVADCaption:
+class TransformerCaption:
     def __init__(self, corpus_file, transform=None):
-        """
+        """Corpus_file formated with YAML or JSON
         Args:
-            corpus_file (str): MVAD corpus file
+            corpus_file (str): corpus YAML or JSON file 
             transform (Compose, default: None): Compose of transforms for caption
-
-        get_caption:
-            Args:
-                video_file (str)
-            Returns:
-                caption (str)
         """
         self.corpus_file = corpus_file
         self.transform = transform
         with open(corpus_file, 'r') as f:
-            lines = f.readlines()
-            self.corpus = reduce(self._line_2_dict, lines, {})
+            self.corpus = yaml.load(f, yaml.Loader)
 
     def __len__(self):
         return len(self.corpus)
 
-    def _line_2_dict(self, corpus_dict, line):
-        file_name, caption = list(map(str.strip, line.split('\t')))
-        corpus_dict.update({file_name: caption})
-        return corpus_dict
-
-    def get_caption(self, video_file):
-        caption = self.corpus[video_file]
+    def __getitem__(self, file):
+        caption = self.corpus[file]
         if self.transform is not None:
             caption = self.transform(caption)
         return caption
 
 
-class MVADFeatureDataset(Dataset):
+class TransformerFeatureDataset(Dataset):
     def __init__(self, feature_files=None, corpus_file=None, inp_max_sequence_size=None, tar_max_sequence_size=None, sp_processor=None, cut_sequence=False, feature_transform=None, caption_transform=None):
         """
+        Args:
+            feature_files (List[str], default: None): List of files
+            corpus_file (str, default: None): Corpus YAML or JSON file 
+            inp_max_sequence_size (int, default: None)
+            tar_max_sequence_size (int, default: None)
+            sp_processor ()
+            cut_sequence (bool, default: False): If True, cut sequences longer than max_sequence_size
+            feature_transform (Compose, default: None): Compose of transform for feature
+            caption_transform (Compose, default: None): Compose of transforms for caption
         __getitem__:
             sample (Dict['feature', 'feature_file', 'caption', 'token', inp_key_padding_mask', 'tar_key_padding_mask', 'mem_key_padding_mask'])
         """
@@ -69,10 +66,11 @@ class MVADFeatureDataset(Dataset):
 
         # Caption
         if corpus_file is not None:
-            self.caption_dataset = MVADCaption(
+            self.caption_dataset = TransformerCaption(
                 corpus_file, transform=caption_transform)
         else:
-            assert corpus_file is not None
+            print('corpus_file not provided')
+            exit(-1)
 
         # Check sp_processor
         if sp_processor is not None:
@@ -81,7 +79,8 @@ class MVADFeatureDataset(Dataset):
             self.end_id = self.sp_processor.PieceToId('</s>')
             self.pad_id = sp_processor.PieceToId('<pad>')
         else:
-            assert sp_processor is not None
+            print('sp_processor not provided')
+            exit(-1)
 
         # Caption padding
         if tar_max_sequence_size is not None:
@@ -101,8 +100,8 @@ class MVADFeatureDataset(Dataset):
 
         # Caption
         feature_file = sample['feature_file']
-        video_file = re.sub('\.npy$', '', os.path.split(feature_file)[-1])
-        caption = self.caption_dataset.get_caption(video_file)
+        original_file = re.sub('\.npy$', '', os.path.split(feature_file)[-1])
+        caption = self.caption_dataset[original_file]
         sample['caption'] = caption
 
         # Token

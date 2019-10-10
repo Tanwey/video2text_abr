@@ -10,7 +10,7 @@ import os
 from agents.base import BaseAgent
 from graph.models.transformer import Transformer
 from utils.mask import create_look_ahead_mask
-from datasets.MVADdataset import MVADFeatureDataset
+from datasets.transformer_feature_dataset import TransformerFeatureDataset
 from utils.beam_search import BeamSearch
 from utils.metrics import accuracy_batch
 
@@ -22,7 +22,6 @@ class TransformerAgent(BaseAgent):
         self.current_epoch = 1
         self.start_datetime = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
         self.device = torch.device(self.config.device)
-        print(config)
         self.model = Transformer(
             tar_vocab_size=self.config.graph.token.tar_vocab_size,
             encoder_d_model=self.config.graph.model.encoder_d_model,
@@ -45,7 +44,7 @@ class TransformerAgent(BaseAgent):
                 train_feature_files = [feature_file.strip(
                 ) + '.npy' for feature_file in train_feature_files]
 
-            train_dataset = MVADFeatureDataset(
+            train_dataset = TransformerFeatureDataset(
                 train_feature_files, self.config.train.train_corpus_file, self.config.graph.sequence.inp_max_sequence_size, self.config.graph.sequence.tar_max_sequence_size, self.sp, self.config.graph.sequence.cut_sequence)
             self.train_dataloader = torch.utils.data.DataLoader(
                 train_dataset, batch_size=self.config.train.train_batch_size, shuffle=True)
@@ -56,7 +55,7 @@ class TransformerAgent(BaseAgent):
                 val_feature_files = [feature_file.strip(
                 ) + '.npy' for feature_file in val_feature_files]
 
-            val_dataset = MVADFeatureDataset(
+            val_dataset = TransformerFeatureDataset(
                 val_feature_files, self.config.val.val_corpus_file, self.config.graph.sequence.inp_max_sequence_size, self.config.graph.sequence.tar_max_sequence_size, self.sp, self.config.graph.sequence.cut_sequence)
             self.val_dataloader = torch.utils.data.DataLoader(
                 val_dataset, batch_size=self.config.val.val_batch_size, shuffle=False)
@@ -66,7 +65,7 @@ class TransformerAgent(BaseAgent):
                 test_feature_files = f.readlines()
                 test_feature_files = [feature_file.strip(
                 ) + '.npy' for feature_file in test_feature_files]
-            test_dataset = MVADFeatureDataset(
+            test_dataset = TransformerFeatureDataset(
                 test_feature_files, self.config.test.test_corpus_file, self.config.graph.sequence.inp_max_sequence_size, self.config.graph.sequence.tar_max_sequence_size, self.sp, self.config.graph.sequence.cut_sequence)
             self.test_dataloader = torch.utils.data.DataLoader(
                 test_dataset, batch_size=self.config.test.test_batch_size, shuffle=False)
@@ -83,7 +82,8 @@ class TransformerAgent(BaseAgent):
         if self.config.summary_writer_dir is not None:
             if os.path.exists(self.config.summary_writer_dir) is False:
                 os.makedirs(self.config.summary_writer_dir)
-            self.summary_writer = SummaryWriter(self.config.summary_writer_dir)
+            self.summary_writer = SummaryWriter(os.path.join(
+                self.config.summary_writer_dir, self.start_datetime))
 
         # Load Check point
         if self.config.load_checkpoint is not None:
@@ -91,8 +91,9 @@ class TransformerAgent(BaseAgent):
 
         # Save Check point
         if self.config.save_checkpoint is not None:
-            if os.path.exists(self.config.save_checkpoint) is False:
-                os.makedirs(self.config.save_checkpoint)
+            if os.path.exists(self.config.save_checkpoint, self.start_datetime) is False:
+                os.makedirs(os.path.join(
+                    self.config.save_checkpoint, self.start_datetime))
 
     def save_checkpoint(self):
         torch.save({
@@ -165,14 +166,18 @@ class TransformerAgent(BaseAgent):
             loss.backward()
             self.optimizer.step()
 
-        # summary
+        # Checkpoint
         if self.config.save_checkpoint is not None:
             self.save_checkpoint()
+        # Summary
         if self.config.summary_writer_dir is not None:
             self.summary_writer.add_scalar(
                 'loss/train', train_loss / step, self.current_epoch)
             self.summary_writer.add_scalar(
                 'accuracy/train', train_accuracy / step, self.current_epoch)
+            if self.current_epoch == 1:
+                with torch.no_grad():
+                    self.summary_writer.add_graph(model, feature, token_inp)
         print('{} EPOCH - Loss {}, Accuracy: {}'.format(self.current_epoch,
                                                         train_loss, train_accuracy))
 
