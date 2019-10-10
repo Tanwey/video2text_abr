@@ -1,6 +1,7 @@
 agent: transformer_agent
 device: "cuda:0"
 train:
+  epoch: 70
   train_feature_list_file: data/MVAD/train_list_50
   train_corpus_file: data/MVAD/corpus_M-VAD_train.txt
   train_batch_size: 32
@@ -22,30 +23,21 @@ graph:
     decoder_num_layers: 4
     dff: 2048
     dropout: 0.1
+    max_seq_length: 80
   optimizer:
     learning_rate: 0.0001
     beta1: 0.98
     beta2: 0.998
-
-    
-
-
-
-{
-  "cut_sequence": true,
-  "tokenizer_file": "data/MVAD/tokenizer.model",
-  "load_checkpoint": null,
-  "save_checkpoint": "checkpoint/transformer",
-  "summary_writer_dir": "logs/transformer",
-  "tar_vocab_size": 5000,
-  "inp_max_sequence_size": 50,
-  "tar_max_sequence_size": 50,
-  "max_seq_length": 80,
-  "pad_id": 0,
-  "start_id": 1,
-  "end_id": 2,
-  "beam_k": 5,
-  "beam_min_length": 3,
-  "beam_num_required": 25,
-  "epoch": 70,
-}
+  token:
+    tokenizer_file: data/MVAD/tokenizer.model
+    tar_vocab_size: 5000
+    pad_id: 0
+    start_id: 1
+    end_id: 2
+  sequence:
+    tar_max_sequence_size: 50
+    inp_max_sequence_size: 50
+    cut_sequence: true
+load_checkpoint: null
+save_checkpoint: checkpoint/transformer
+summary_writer_dir: logs/transformer

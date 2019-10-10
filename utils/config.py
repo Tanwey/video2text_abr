@@ -1,20 +1,21 @@
-import json
+import yaml
 from easydict import EasyDict
 
 
-def get_config_from_json(json_file):
-    """Get the config from a json file
+def get_config(file):
+    """Get the config from a yaml file
     Args:
-        json_file (str): Path of json file
+        json_file (str): Path of yaml or json file
     Returns:
         config (EasyDict[str, any]): Config
     """
 
-    with open(json_file, 'r') as f:
+    with open(file, 'r') as f:
         try:
-            config = json.load(f)
+            config = yaml.load(f)
             config = EasyDict(config)
             return config
         except:
-            print("INVALID JSON file format.. Please provide a good json file")
+            print(
+                "INVALID YAML or JSON file format.. Please provide a good yaml or json file")
             exit(-1)
