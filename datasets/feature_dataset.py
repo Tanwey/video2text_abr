@@ -24,7 +24,8 @@ class BaseFeatureDataset(Dataset):
             If max_sequence_size is not None, Dict['feature', 'feature_file', 'padding_mask']
         """
         super(BaseFeatureDataset, self).__init__()
-        self.feature_files = feature_files
+        self.feature_files = [feature_file.strip()
+                              for feature_file in feature_files]
         self.max_sequence_size = max_sequence_size
         # Padding
         if max_sequence_size is not None:

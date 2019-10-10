@@ -1,7 +1,7 @@
 import argparse
 from easydict import EasyDict
 
-from agents import *
+from agents.transformer_agent import TransformerAgent
 from utils.config import get_config_from_json
 
 
@@ -12,9 +12,10 @@ def main(config):
     """
     if isinstance(config, EasyDict) is False:
         config = EasyDict(config)
-    # Create the Agent and pass all the configuration to it then run it..
-    agent_class = globals()[config.agent]
-    agent = agent_class(config)
+
+    if config.agent == "transformer_agent":
+        agent = TransformerAgent(config)
+
     agent.run()
     agent.finalize()
 

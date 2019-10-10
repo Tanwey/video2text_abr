@@ -113,7 +113,7 @@ class MVADFeatureDataset(Dataset):
         # Token padding
         if self.tar_max_sequence_size is not None:
             tar_key_padding_mask = create_padding_mask_from_size(
-                self.tar_max_sequence_size, token.size(0))
+                self.tar_max_sequence_size - 1, token.size(0))
             sample['tar_key_padding_mask'] = tar_key_padding_mask
             token = self.token_padding(token)
 
