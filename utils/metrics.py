@@ -10,13 +10,11 @@ def accuracy_batch(predict, target, pad_id=0):
     Returns:
         accuracy (int): Accuracy from 0 to 100 (unit: % percentage)
     """
-    print('accuracy start')
     matched_matrix = (predict == target)
     mask = (target != pad_id) | (predict != pad_id)
     matched_matrix = matched_matrix * mask
     acc = matched_matrix.type(torch.float).sum() / mask.type(torch.float).sum()
     return acc * 100.0
-    print('accuracy end')
 
 
 def bleu_batch(references_batch, hypothesis_batch):

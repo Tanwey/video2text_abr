@@ -147,8 +147,9 @@ class TransformerAgent(BaseAgent):
 
             train_accuracy += accuracy_batch(
                 torch.max(prediction, dim=-1)[1], token_tar)
-            print('{} EPOCH {} / {} - Loss: {}, Accuracy: {}'.format(self.current_epoch, step,
-                                                                     int(len(self.train_dataloader) / self.config.train_batch_size), train_loss / step, train_accuracy / step))
+            if step % 10 == 0:
+                print('{} EPOCH {} / {} - Loss: {}, Accuracy: {}'.format(self.current_epoch, step,
+                                                                         len(self.train_dataloader), train_loss / step, train_accuracy / step))
 
             # Backprop
             self.optimizer.zero_grad()
@@ -161,8 +162,8 @@ class TransformerAgent(BaseAgent):
             'loss/train', train_loss / step, self.current_epoch)
         self.summary_writer.add_scalar(
             'accuracy/train', train_accuracy / step, self.current_epoch)
-        print('{} EPOCH - Loss {}, Accuracy: {}'.format(self.current_epoch, step, int(
-            len(self.train_dataloader) / self.config.train_batch_size), train_loss, train_accuracy))
+        print('{} EPOCH - Loss {}, Accuracy: {}'.format(self.current_epoch,
+                                                        train_loss, train_accuracy))
 
     def validate(self):
         self.model.eval()
