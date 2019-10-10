@@ -46,7 +46,7 @@ class BeamSearch:
               start_id: Tokenizer id of start token <s>
               end_id: Tokenizer id of end token </s>
               max_length: Maximum length of ids (include <s> and </s>)
-              min_length: Minimun lenght of ids (include <s> and </s>)
+              min_length: Minimun length of ids (include <s> and </s>)
               num_required: Searching ends when count of saved nodes are larger than num_required
                 default None
 
@@ -119,6 +119,12 @@ class BeamSearch:
         self.count += 1
 
     def __call__(self, model_inp):
+        """
+        Args:
+            model_inp (Dict)
+        Returns:
+            token (Tensor[Long])
+        """
         self.leaf_nodes = [BeamNode(self.start_id)]
         self.count = 1
         self.end_nodes = []
@@ -127,12 +133,9 @@ class BeamSearch:
             self._step(model_inp)
             if len(self.end_nodes) >= self.num_required:
                 break
-            print('step: {}, end_nodes: {}'.format(
-                self.count, len(self.end_nodes)))
 
         # If end token is not predicted
         if len(self.end_nodes) == 0:
-            print(self.count, 'no end node')
             best_node = self.leaf_nodes[0]
             for node in self.leaf_nodes[1:]:
                 if best_node.score() < node.score():
