@@ -29,8 +29,8 @@
   "beta2": 0.998,
   "d_model": 512,
   "num_heads": 8,
-  "encoder_num_layers": 6,
-  "decoder_num_layers": 6,
+  "encoder_num_layers": 2,
+  "decoder_num_layers": 4,
   "dff": 2048,
   "dropout": 0.1
 }
